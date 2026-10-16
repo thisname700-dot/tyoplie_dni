@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#B0294F">
+<title>Тёплые дни</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: one-column phone app. Cycle dial on top, one main action, mood check-in, a message to the loved one, bottom tab bar. */
+:root {
+  --bg: #F5F2F4;
+  --surface: #FFFFFF;
+  --surface-2: #EEE8EC;
+  --ink: #2A2230;
+  --muted: #6B6073;
+  --line: #E2DAE1;
+  --accent: #B0294F;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #F8E0E7;
+  --calm: #25716A;
+  --calm-soft: #DDEFEC;
+  --track: #E6DEE5;
+  --font-display: "Unbounded", "Onest", system-ui, sans-serif;
+  --font-body: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17121A;
+    --surface: #221B26;
+    --surface-2: #2D2532;
+    --ink: #F3ECF3;
+    --muted: #AB9FB2;
+    --line: #3A3040;
+    --accent: #EE7A9C;
+    --accent-ink: #2A0F19;
+    --accent-soft: #3B2330;
+    --calm: #6CC3B8;
+    --calm-soft: #1F3633;
+    --track: #352B3B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17121A;
+  --surface: #221B26;
+  --surface-2: #2D2532;
+  --ink: #F3ECF3;
+  --muted: #AB9FB2;
+  --line: #3A3040;
+  --accent: #EE7A9C;
+  --accent-ink: #2A0F19;
+  --accent-soft: #3B2330;
+  --calm: #6CC3B8;
+  --calm-soft: #1F3633;
+  --track: #352B3B;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 var(--font-body);
+  padding-block: 20px 108px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.wrap > * { min-width: 0; }
+
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+h1 { font: 700 19px/1.25 var(--font-display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.date { color: var(--muted); font-size: 14px; text-transform: capitalize; }
+h2 { font: 500 14px/1.3 var(--font-display); margin: 0; letter-spacing: 0.01em; }
+p { margin: 0; }
+.cap { color: var(--muted); font-size: 14px; line-height: 1.35; }
+.big { font: 700 40px/1 var(--font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.big.sm { font-size: 26px; }
+
+/* dial */
+.dial { position: relative; width: min(76vw, 300px); margin: 4px auto 0; }
+.dial svg { display: block; width: 100%; height: auto; overflow: visible; }
+.dial .track { stroke: var(--track); }
+.dial .per { stroke: var(--accent); }
+.dial .pms { stroke: var(--calm); opacity: 0.75; }
+.dial .pin { fill: var(--surface); stroke: var(--ink); stroke-width: 4; }
+.dial-c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 0 56px; }
+.status { text-align: center; color: var(--muted); text-wrap: balance; }
+.legend { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+/* surfaces */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.card.soft { background: var(--accent-soft); border-color: transparent; }
+.card.calm { background: var(--calm-soft); border-color: transparent; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row > * { min-width: 0; }
+.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+
+/* controls */
+.btn { min-height: 52px; border: 0; border-radius: 16px; font: 600 16px/1.2 var(--font-body); padding: 0 20px; cursor: pointer; width: 100%; display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: var(--surface-2); color: var(--ink); }
+.btn.line { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn.sm { min-height: 44px; width: auto; padding: 0 16px; font-size: 15px; border-radius: 14px; flex: 1 1 auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: 500 15px/1.2 var(--font-body); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
+input, textarea { width: 100%; min-height: 48px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: 16px/1.4 var(--font-body); padding: 10px 12px; }
+textarea { min-height: 112px; resize: vertical; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.stat b { font: 700 26px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+.item { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.item > div { min-width: 0; }
+.linkbtn { background: none; border: 0; color: var(--accent); font: 600 14px/1.2 var(--font-body); min-height: 44px; padding: 0 6px; cursor: pointer; }
+
+/* tabs + toast */
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--surface); border-top: 1px solid var(--line); padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.tabs-in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.tab { min-height: 52px; border: 0; background: none; color: var(--muted); font: 500 12px/1.2 var(--font-body); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; border-radius: 12px; }
+.tab[aria-current="page"] { color: var(--accent); }
+.tab svg { width: 22px; height: 22px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; z-index: 6; max-width: calc(100vw - 32px); text-align: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .dial .per, .dial .pms { transition: stroke-dasharray .4s ease; }
+}
+:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+
+<div id="app" class="wrap"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+  var KEY = 'tyoplye-dni-v1';
+
+  var MOODS = [
+    ['pain', 'Болит живот или спина'],
+    ['weak', 'Нет сил'],
+    ['irritated', 'Всё раздражает'],
+    ['sad', 'Грустно или тревожно'],
+    ['ok', 'Нормально']
+  ];
+  var REPLY = {
+    pain: 'Мне жаль, что болит. Многим помогает тепло на низ живота или поясницу: грелка или тёплая ванна. Ещё тёплый чай с имбирём или мятой, поза с поджатыми коленями, мягкая растяжка и меньше нагрузки сегодня, без чувства вины. Если боль очень сильная, не проходит или ты замечаешь что-то необычное, лучше показаться врачу.',
+    weak: 'Сил нет, и это нормально. Сегодня можно сделать минимум: поесть что-то тёплое, попить воды, прилечь. Остальное подождёт. Ты не ленишься, организм сейчас работает.',
+    irritated: 'Бывает, когда всё бесит. Это гормоны и усталость, а не твой характер. Выдохни, выйди на пару минут на воздух, выключи уведомления. Близким можно сказать: «Мне сегодня тяжело, давайте без споров».',
+    sad: 'Перед месячными и во время них эмоции становятся громче, и это не слабость. Ты не одна. Можно поплакать, написать кому-то близкому или просто побыть в тишине. Если грусть долго не отпускает или пугает, расскажи близким или специалисту.',
+    ok: 'Рада слышать. Тогда мягкий день: больше воды, что-то вкусное и немного отдыха.'
+  };
+  var TIPS = [
+    'Тёплый чай с имбирём, мятой или ромашкой.',
+    'Грелка на живот или поясницу: тепло расслабляет.',
+    'Пей воду, даже если не хочется.',
+    'Позволь себе что-то вкусное: кусочек тёмного шоколада, фрукты, любимое.',
+    'Тёплая ванна или душ.',
+    'Лёгкая прогулка или растяжка, если есть настроение.',
+    'Ляг пораньше. Сон сейчас лучше любых дел.',
+    'Тёплые носки, мягкий плед, любимый сериал.',
+    'Выключи на час уведомления и побудь в тишине.',
+    'Скажи близким, чего хочется: объятий, тишины или помощи по дому.'
+  ];
+  var PRESETS = [
+    ['started', 'Начались'],
+    ['pain', 'Больно'],
+    ['weak', 'Нет сил'],
+    ['irritated', 'Раздражена'],
+    ['sad', 'Грустно'],
+    ['call', 'Нужно внимание']
+  ];
+  var PMSG = {
+    started: 'У меня начались месячные. Могу быть уставшей и чувствительной. Буду рада заботе: чай, объятия и немного терпения.',
+    pain: 'Мне сегодня больно из-за месячных. Можешь написать мне или приехать? Мне бы грелку, тёплый чай и немного заботы.',
+    weak: 'У меня сегодня совсем нет сил. Можешь взять на себя пару бытовых дел и просто побыть рядом?',
+    irritated: 'Меня сегодня всё раздражает, и это не про тебя. Давай сегодня без споров и поспокойнее?',
+    sad: 'Мне сегодня грустно и тревожно. Можешь написать мне или позвонить? Хочется, чтобы кто-то был рядом.',
+    call: 'Мне хочется внимания и объятий. Напиши мне, пожалуйста.'
+  };
+
+  /* ---------- state ---------- */
+  function defaults() { return { set: false, name: '', cycle: 28, period: 5, tg: '', cycles: [], moods: {} }; }
+  function load() {
+    try {
+      var r = localStorage.getItem(KEY);
+      if (r) { var o = JSON.parse(r); var d = defaults(); for (var k in o) d[k] = o[k]; return d; }
+    } catch (e) {}
+    return defaults();
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  var S = load();
+  var tab = 'today';
+  var ui = { mood: null, pOpen: false, msg: PMSG.call, tips: null, confirmReset: false, delIdx: -1 };
+
+  /* ---------- dates ---------- */
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function isoOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function todayISO() { return isoOf(new Date()); }
+  function dn(s) { var p = s.split('-').map(Number); return Math.round(Date.UTC(p[0], p[1] - 1, p[2]) / 864e5); }
+  function isoFromDn(n) { var d = new Date(n * 864e5); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); }
+  function fmt(n) { return new Date(n * 864e5).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' }); }
+  function fmtShort(n) { return new Date(n * 864e5).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+  function dayWord(n) {
+    n = Math.abs(n); var a = n % 100, b = n % 10;
+    if (a >= 11 && a <= 14) return 'дней';
+    if (b === 1) return 'день';
+    if (b >= 2 && b <= 4) return 'дня';
+    return 'дней';
+  }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function clamp(v, lo, hi) { v = parseInt(v, 10); if (isNaN(v)) return null; return Math.min(hi, Math.max(lo, v)); }
+  function avg(a) { return Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length); }
+
+  /* ---------- cycle logic ---------- */
+  function closeOld(applyLast) {
+    var cs = S.cycles, today = dn(todayISO());
+    cs.sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+    for (var i = 0; i < cs.length; i++) {
+      var c = cs[i]; if (c.end) continue;
+      var isLast = i === cs.length - 1;
+      var e = dn(c.start) + S.period - 1;
+      if (!isLast) { e = Math.min(e, dn(cs[i + 1].start) - 1); c.end = isoFromDn(e); }
+      else if (applyLast && today - dn(c.start) >= S.period) c.end = isoFromDn(e);
+    }
+  }
+  function stats() {
+    var cs = S.cycles, gaps = [], lens = [], i;
+    for (i = 1; i < cs.length; i++) { var g = dn(cs[i].start) - dn(cs[i - 1].start); if (g >= 15 && g <= 60) gaps.push(g); }
+    for (i = 0; i < cs.length; i++) { if (cs[i].end) { var l = dn(cs[i].end) - dn(cs[i].start) + 1; if (l >= 2 && l <= 10) lens.push(l); } }
+    var g3 = gaps.slice(-3), l3 = lens.slice(-3);
+    var cycle = g3.length ? avg(g3) : S.cycle;
+    var period = l3.length ? avg(l3) : S.period;
+    var last = cs.length ? cs[cs.length - 1] : null;
+    var today = dn(todayISO());
+    var since = last ? today - dn(last.start) : null;
+    var active = !!last && !last.end && since >= 0 && since <= 14;
+    var next = last ? dn(last.start) + cycle : null;
+    return { cs: cs, cycle: cycle, period: period, last: last, since: since, active: active, next: next, today: today, hasGaps: g3.length > 0, hasLens: l3.length > 0 };
+  }
+
+  /* ---------- views ---------- */
+  function dialSVG(st) {
+    var L = Math.max(st.cycle, 15), C = 2 * Math.PI * 84;
+    function arc(from, len, cls) {
+      return '<circle class="' + cls + '" cx="100" cy="100" r="84" fill="none" stroke-width="14" stroke-dasharray="' +
+        (C * len / L).toFixed(2) + ' ' + C.toFixed(2) + '" stroke-dashoffset="' + (-C * from / L).toFixed(2) +
+        '" transform="rotate(-90 100 100)"/>';
+    }
+    var s = '<svg viewBox="0 0 200 200" role="img" aria-label="Круг цикла">' +
+      '<circle class="track" cx="100" cy="100" r="84" fill="none" stroke-width="14"/>' +
+      arc(0, Math.min(st.period, L), 'per');
+    if (L > st.period + 3) s += arc(L - 3, 3, 'pms');
+    if (st.last) {
+      var d = Math.min(Math.max(st.since + 1, 1), L);
+      var a = 2 * Math.PI * (d - 0.5) / L - Math.PI / 2;
+      s += '<circle class="pin" cx="' + (100 + 84 * Math.cos(a)).toFixed(1) + '" cy="' + (100 + 84 * Math.sin(a)).toFixed(1) + '" r="10"/>';
+    }
+    return s + '</svg>';
+  }
+  function dialCenter(st) {
+    if (!st.last) return '<div class="cap">пока нет данных</div><div class="big">—</div><div class="cap">отметь первый день</div>';
+    if (st.active) return '<div class="cap">месячные</div><div class="big sm">день ' + (st.since + 1) + '</div><div class="cap">обычно ' + st.period + ' ' + dayWord(st.period) + '</div>';
+    var n = st.next - st.today;
+    if (n > 0) return '<div class="cap">до следующих</div><div class="big">' + n + '</div><div class="cap">' + dayWord(n) + '</div>';
+    if (n === 0) return '<div class="cap">по расчёту</div><div class="big sm">сегодня</div>';
+    return '<div class="cap">задержка</div><div class="big">' + (-n) + '</div><div class="cap">' + dayWord(-n) + '</div>';
+  }
+  function statusLine(st) {
+    if (!st.last) return 'Отметь первый день месячных, и я начну считать.';
+    if (st.active) return 'Идут с ' + fmt(dn(st.last.start)) + '. Береги себя.';
+    var n = st.next - st.today;
+    if (n >= 0) return 'Ожидаются примерно ' + fmt(st.next) + '. Это прогноз, циклы бывают гибкими.';
+    return 'Циклы бывают гибкими. Как начнутся, нажми кнопку ниже.';
+  }
+  function pickTips() {
+    var a = TIPS.slice(), r = [];
+    for (var i = 0; i < 3; i++) r.push(a.splice(Math.floor(Math.random() * a.length), 1)[0]);
+    return r;
+  }
+  function tgLinks() {
+    var t = encodeURIComponent(ui.msg || '');
+    var h = '<a class="btn sm primary" target="_blank" rel="noopener" href="https://t.me/share/url?url=%20&text=' + t + '">В Telegram</a>' +
+      '<a class="btn sm ghost" target="_blank" rel="noopener" href="https://wa.me/?text=' + t + '">В WhatsApp</a>' +
+      '<button class="btn sm ghost" data-act="copy" type="button">Скопировать</button>';
+    return h;
+  }
+
+  function todayView(st) {
+    var now = new Date();
+    var head = '<div class="top"><h1>Привет' + (S.name ? ', ' + esc(S.name) : '') + '</h1><span class="date">' +
+      esc(now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></div>';
+    var dial = '<div class="dial">' + dialSVG(st) + '<div class="dial-c">' + dialCenter(st) + '</div></div>' +
+      '<p class="status">' + esc(statusLine(st)) + '</p>' +
+      '<div class="legend"><span><i style="background:var(--accent)"></i>месячные</span><span><i style="background:var(--calm)"></i>за 3 дня до</span></div>';
+
+    var banner = '';
+    if (!st.active && st.last) {
+      var n = st.next - st.today;
+      if (n >= 0 && n <= 2) banner = '<div class="card calm"><h2>Скоро месячные</h2><p>Если появится раздражение, усталость или слёзы из-за мелочей, это гормоны, а не ты. Выспись, поешь тёплого и отложи лишнее.</p></div>';
+    }
+
+    var cta;
+    if (st.active) {
+      var due = st.since + 1 >= st.period;
+      cta = '<button class="btn ' + (due ? 'primary' : 'ghost') + '" data-act="end" type="button">Месячные закончились</button>';
+    } else {
+      cta = '<button class="btn primary" data-act="start" type="button">Месячные начались</button>';
+    }
+
+    var chips = MOODS.map(function (m) {
+      return '<button class="chip" type="button" data-act="mood" data-k="' + m[0] + '" aria-pressed="' + (ui.mood === m[0]) + '">' + m[1] + '</button>';
+    }).join('');
+    var reply = '';
+    if (ui.mood) {
+      reply = '<div class="card soft"><p>' + REPLY[ui.mood] + '</p>' +
+        (ui.mood !== 'ok' ? '<button class="btn sm ghost" data-act="partner-open" data-k="' + ui.mood + '" type="button">Дать знать любимому</button>' : '') + '</div>';
+    }
+    var mood = '<section class="stack"><h2>Как ты сегодня?</h2><div class="chips">' + chips + '</div>' + reply + '</section>';
+
+    var partner = '<section class="card"><h2>Позвать любимого</h2>';
+    if (!ui.pOpen) {
+      partner += '<p class="cap">Подготовлю сообщение, а отправишь ты сама.</p><button class="btn ghost" data-act="partner-open" data-k="call" type="button">Составить сообщение</button>';
+    } else {
+      partner += '<div class="chips">' + PRESETS.map(function (p) { return '<button class="chip" type="button" data-act="preset" data-k="' + p[0] + '">' + p[1] + '</button>'; }).join('') + '</div>' +
+        '<label for="pmsg">Текст сообщения<textarea id="pmsg">' + esc(ui.msg) + '</textarea></label>' +
+        '<div class="row" id="plinks">' + tgLinks() + '</div>' +
+        (S.tg ? '<a class="btn sm line" target="_blank" rel="noopener" href="https://t.me/' + esc(S.tg) + '">Открыть чат @' + esc(S.tg) + '</a>' : '') +
+        '<p class="cap">Приложение ничего не отправляет само. Если Telegram или WhatsApp не открылись, скопируй текст и вставь в чат.</p>';
+    }
+    partner += '</section>';
+
+    if (!ui.tips) ui.tips = pickTips();
+    var tips = '<section class="card"><h2>Что поможет</h2><ul class="tips">' + ui.tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' +
+      '<button class="btn sm ghost" data-act="tips" type="button">Другие советы</button></section>';
+
+    return head + dial + banner + cta + mood + partner + tips;
+  }
+
+  function cyclesView(st) {
+    var t = '<div class="top"><h1>Циклы</h1></div>';
+    var sum = '<div class="grid2"><div class="stat"><span class="cap">Длина цикла</span><b>' + st.cycle + '</b><span class="cap">' + dayWord(st.cycle) + (st.hasGaps ? ', по твоим отметкам' : ', из настроек') + '</span></div>' +
+      '<div class="stat"><span class="cap">Месячные идут</span><b>' + st.period + '</b><span class="cap">' + dayWord(st.period) + (st.hasLens ? ', по твоим отметкам' : ', из настроек') + '</span></div></div>';
+    var add = '<form class="card" id="f-add"><h2>Добавить прошлый цикл</h2><label for="a-date">Первый день месячных<input type="date" id="a-date" max="' + todayISO() + '" required></label><button class="btn ghost" type="submit">Добавить</button></form>';
+    var list;
+    if (!st.cs.length) list = '<p class="cap">Пока пусто. Нажми «Месячные начались» в первый день, и запись появится здесь.</p>';
+    else {
+      list = '<div class="list">';
+      for (var i = st.cs.length - 1; i >= 0; i--) {
+        var c = st.cs[i], s0 = dn(c.start);
+        var range = c.end ? fmtShort(s0) + ' — ' + fmtShort(dn(c.end)) : 'с ' + fmtShort(s0) + ', идут';
+        var sub = '';
+        if (c.end) sub = (dn(c.end) - s0 + 1) + ' ' + dayWord(dn(c.end) - s0 + 1);
+        if (i > 0) { var g = s0 - dn(st.cs[i - 1].start); sub += (sub ? ' · ' : '') + 'цикл ' + g + ' ' + dayWord(g); }
+        list += '<div class="item"><div><div>' + esc(range) + '</div><div class="cap">' + esc(sub || ' ') + '</div></div>' +
+          (ui.delIdx === i
+            ? '<div class="row"><button class="linkbtn" data-act="del-yes" data-i="' + i + '" type="button">Удалить</button><button class="linkbtn" style="color:var(--muted)" data-act="del-no" type="button">Отмена</button></div>'
+            : '<button class="linkbtn" data-act="del-ask" data-i="' + i + '" type="button">Удалить</button>') + '</div>';
+      }
+      list += '</div>';
+    }
+    return t + sum + add + '<section class="stack"><h2>История</h2>' + list + '</section>';
+  }
+
+  function settingsView() {
+    return '<div class="top"><h1>Настройки</h1></div>' +
+      '<form class="card" id="f-set">' +
+      '<label for="s-name">Как тебя называть<input id="s-name" value="' + esc(S.name) + '" maxlength="40" autocomplete="off"></label>' +
+      '<div class="grid2"><label for="s-cycle">Цикл, дней<input id="s-cycle" type="number" inputmode="numeric" min="20" max="45" value="' + S.cycle + '"></label>' +
+      '<label for="s-period">Месячные, дней<input id="s-period" type="number" inputmode="numeric" min="2" max="10" value="' + S.period + '"></label></div>' +
+      '<label for="s-tg">Telegram любимого (необязательно)<input id="s-tg" value="' + esc(S.tg) + '" placeholder="username без @" autocapitalize="none" autocomplete="off"></label>' +
+      '<button class="btn primary" type="submit">Сохранить</button></form>' +
+      '<p class="cap">Все данные хранятся только в этом браузере на этом устройстве. Никуда не отправляются. Если очистить данные сайтов, записи пропадут.</p>' +
+      (ui.confirmReset
+        ? '<div class="card soft"><p>Удалить все записи и настройки?</p><div class="row"><button class="btn sm primary" data-act="reset-yes" type="button">Да, удалить</button><button class="btn sm ghost" data-act="reset-no" type="button">Отмена</button></div></div>'
+        : '<button class="btn line" data-act="reset-ask" type="button">Удалить все данные</button>');
+  }
+
+  function onboarding() {
+    return '<div class="top"><h1>Тёплые дни</h1></div>' +
+      '<p>Я помогу следить за циклом и поддержу в тяжёлые дни. Настроим за минуту.</p>' +
+      '<form class="card" id="f-onb">' +
+      '<label for="o-name">Как тебя зовут<input id="o-name" maxlength="40" autocomplete="off" required></label>' +
+      '<label for="o-date">Когда начались последние месячные (если помнишь)<input id="o-date" type="date" max="' + todayISO() + '"></label>' +
+      '<div class="grid2"><label for="o-cycle">Цикл, дней<input id="o-cycle" type="number" inputmode="numeric" min="20" max="45" value="28"></label>' +
+      '<label for="o-period">Месячные, дней<input id="o-period" type="number" inputmode="numeric" min="2" max="10" value="5"></label></div>' +
+      '<button class="btn primary" type="submit">Начать</button></form>' +
+      '<p class="cap">Данные хранятся только в этом браузере. Если не знаешь длину цикла, оставь 28 и 5: я подстроюсь по твоим отметкам.</p>';
+  }
+
+  function icon(name) {
+    var p = {
+      today: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/>',
+      cycles: '<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+      settings: '<path d="M5 8h14M5 16h14"/><circle cx="9" cy="8" r="2.4" fill="var(--surface)"/><circle cx="15" cy="16" r="2.4" fill="var(--surface)"/>'
+    }[name];
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+  }
+  function nav() {
+    function b(k, label) { return '<button class="tab" type="button" data-act="tab" data-k="' + k + '"' + (tab === k ? ' aria-current="page"' : '') + '>' + icon(k) + label + '</button>'; }
+    return '<nav class="tabs" aria-label="Разделы"><div class="tabs-in">' + b('today', 'Сегодня') + b('cycles', 'Циклы') + b('settings', 'Настройки') + '</div></nav>';
+  }
+
+  var app = document.getElementById('app');
+  function render() {
+    if (!S.set) { app.innerHTML = onboarding(); return; }
+    var st = stats();
+    var v = tab === 'today' ? todayView(st) : tab === 'cycles' ? cyclesView(st) : settingsView();
+    app.innerHTML = v + nav();
+  }
+
+  /* ---------- helpers ---------- */
+  var toastTimer;
+  function toast(t) {
+    var el = document.getElementById('toast');
+    el.textContent = t; el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.hidden = true; }, 2200);
+  }
+  function setTab(k) { tab = k; ui.delIdx = -1; ui.confirmReset = false; render(); try { window.scrollTo(0, 0); } catch (e) {} }
+  function refreshLinks() { var el = document.getElementById('plinks'); if (el) el.innerHTML = tgLinks(); }
+  function normTg(v) { v = (v || '').trim().replace(/^@/, '').replace(/^https?:\/\/t\.me\//, ''); return /^[A-Za-z0-9_]{4,32}$/.test(v) ? v : ''; }
+
+  /* ---------- events ---------- */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]'); if (!t) return;
+    var a = t.dataset.act, k = t.dataset.k;
+    var td = todayISO();
+    if (a === 'tab') return setTab(k);
+    if (a === 'start') {
+      var st = stats(); if (st.active) return;
+      S.cycles.push({ start: td, end: null }); closeOld(false); S.moods[td] = S.moods[td] || null; save();
+      ui.msg = PMSG.started; ui.mood = null; render(); return toast('Отмечено. Я рядом.');
+    }
+    if (a === 'end') {
+      var s2 = stats(); if (!s2.last || s2.last.end) return;
+      s2.last.end = td; save(); render(); return toast('Ты молодец. Отдыхай.');
+    }
+    if (a === 'mood') { ui.mood = k; S.moods[td] = k; save(); ui.msg = PMSG[k] || PMSG.call; render(); return; }
+    if (a === 'partner-open') { ui.pOpen = true; ui.msg = PMSG[k] || PMSG.call; render(); var p = document.getElementById('pmsg'); if (p) p.scrollIntoView({ block: 'center' }); return; }
+    if (a === 'preset') { ui.msg = PMSG[k]; var ta = document.getElementById('pmsg'); if (ta) ta.value = ui.msg; refreshLinks(); return; }
+    if (a === 'copy') {
+      var el = document.getElementById('pmsg'), txt = el ? el.value : ui.msg;
+      var fallback = function () { if (el) { el.focus(); el.select(); } toast('Выдели текст и скопируй вручную'); };
+      try { navigator.clipboard.writeText(txt).then(function () { toast('Скопировано'); }, fallback); } catch (err) { fallback(); }
+      return;
+    }
+    if (a === 'tips') { ui.tips = pickTips(); render(); return; }
+    if (a === 'del-ask') { ui.delIdx = parseInt(t.dataset.i, 10); render(); return; }
+    if (a === 'del-no') { ui.delIdx = -1; render(); return; }
+    if (a === 'del-yes') { S.cycles.splice(parseInt(t.dataset.i, 10), 1); ui.delIdx = -1; save(); render(); return toast('Удалено'); }
+    if (a === 'reset-ask') { ui.confirmReset = true; render(); return; }
+    if (a === 'reset-no') { ui.confirmReset = false; render(); return; }
+    if (a === 'reset-yes') { S = defaults(); ui = { mood: null, pOpen: false, msg: PMSG.call, tips: null, confirmReset: false, delIdx: -1 }; tab = 'today'; save(); render(); return; }
+  });
+
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'pmsg') { ui.msg = e.target.value; refreshLinks(); }
+  });
+
+  document.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = e.target.id, td = todayISO(), v;
+    if (f === 'f-onb') {
+      S.name = document.getElementById('o-name').value.trim().slice(0, 40);
+      S.cycle = clamp(document.getElementById('o-cycle').value, 20, 45) || 28;
+      S.period = clamp(document.getElementById('o-period').value, 2, 10) || 5;
+      v = document.getElementById('o-date').value;
+      S.cycles = [];
+      if (v && v <= td) { S.cycles.push({ start: v, end: null }); closeOld(true); }
+      S.set = true; save(); render(); return;
+    }
+    if (f === 'f-set') {
+      S.name = document.getElementById('s-name').value.trim().slice(0, 40);
+      S.cycle = clamp(document.getElementById('s-cycle').value, 20, 45) || S.cycle;
+      S.period = clamp(document.getElementById('s-period').value, 2, 10) || S.period;
+      S.tg = normTg(document.getElementById('s-tg').value);
+      save(); render(); return toast('Сохранено');
+    }
+    if (f === 'f-add') {
+      v = document.getElementById('a-date').value;
+      if (!v || v > td) return toast('Выбери дату не позже сегодняшней');
+      for (var i = 0; i < S.cycles.length; i++) if (S.cycles[i].start === v) return toast('Эта дата уже есть');
+      S.cycles.push({ start: v, end: null }); closeOld(true); save(); render(); return toast('Добавлено');
+    }
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
